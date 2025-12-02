@@ -6,4 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.13.2",
+    "psycopg2>=2.9.11",
+    "psycopg2-binary>=2.9.11",
+    "python-dotenv>=1.2.1",
 ]
+
+[dependency-groups]
+dev = []  
