@@ -1,5 +1,5 @@
 [project]
-name = "expense-tracker-mcp"
+name = "model-context-protocol"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -11,6 +11,3 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "python-dotenv>=1.2.1",
 ]
-
-[dependency-groups]
-dev = []  
