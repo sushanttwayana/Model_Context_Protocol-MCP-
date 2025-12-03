@@ -30,7 +30,7 @@ def init_db():
 
             # Balance table
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS total_available_balance (
+                CREATE TABLE IF NOT EXISTS balance (
                     id SERIAL PRIMARY KEY,
                     total NUMERIC NOT NULL DEFAULT 0
                 )
@@ -38,8 +38,8 @@ def init_db():
 
             # Insert initial row with 0 if empty
             cur.execute("""
-                INSERT INTO total_available_balance (total)
-                SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM total_available_balance)
+                INSERT INTO balance (total)
+                SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM balance)
             """)
 
             # Budgets table

@@ -99,7 +99,6 @@
     ],
     "finance_fees": [
       "bank_charges",
-      "share_market",
       "insurance",
       "loan",
       "credit_card",
@@ -127,7 +126,8 @@
       "visa_passport",
       "local_transport",
       "food_travel",
-      "other"
+      "other",
+      "indrive"
     ],
     "home": [
       "household_supplies",
@@ -153,6 +153,7 @@
     ],
     "investments": [
       "mutual_funds",
+      "share_market",
       "stocks",
       "fd_rd",
       "gold",
