@@ -6,10 +6,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi==0.115.6",
-    "uvicorn[standard]==0.34.0",
+    "uvicorn[standard]>=0.35",
     "fastmcp==2.13.2",
     "psycopg2-binary==2.9.11",
     "python-dotenv==1.2.1",
+    "asyncpg>=0.31.0",
 ]
 
 [dependency-groups]

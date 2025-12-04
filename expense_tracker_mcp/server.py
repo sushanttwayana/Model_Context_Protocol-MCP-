@@ -18,11 +18,28 @@
 
 ## CONVERSION OF FASTAPI TO MCP SERVER
 
-from fastmcp import FastMCP
-from with_fastapi import app ## import your FastAPU app
+# from fastmcp import FastMCP
+# from with_fastapi import app ## import your FastAPU app
 
-# convert fastapi app to mcp server
-mcp = FastMCP.from_fastapi(app=app, name="Expense Tracker MCP Server")
+# # convert fastapi app to mcp server
+# mcp = FastMCP.from_fastapi(app=app, name="Expense Tracker MCP Server")
+
+# if __name__ == "__main__":
+#     mcp.run()
+
+#------------------------------------------------------------------
+
+#### PROXY SERVER ADDED FOR CONNECTORS 
+
+from fastmcp import FastMCP
+
+# create a proxy to your remote FastMCP Cloud Server
+# FastMCP CLoud uses Streamable HTTP (default), so just use the /mcp url
+
+mcp = FastMCP.as_proxy(
+    "https://expense-tracker-mcp-proj.fastmcp.app/mcp", ## Stnadard FastMCP Cloud URL
+    name = "Expense Tracker Proxy"
+)
 
 if __name__ == "__main__":
     mcp.run()
