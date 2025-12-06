@@ -1,9 +1,6 @@
 from fastmcp import FastMCP
 import os
 from dotenv import load_dotenv
-import psycopg2
-import psycopg2.extras
-from db import get_db_connection, init_db
 import asyncio
 import asyncpg
 
@@ -11,7 +8,20 @@ import asyncpg
 load_dotenv()
 
 # Get the PostgreSQL connection string from .env
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
+
+# mcp = FastMCP("ExpenseTracker")
+
+# ----------------------------------------------
+DATABASE_URL = "postgresql://neondb_owner:npg_2vURTBmK9inZ@ep-wandering-mud-a1dihfd1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+
+if not DATABASE_URL:
+    raise ValueError(
+        "DATABASE_URL environment variable is not set. "
+        "Please configure it in FastMCP Cloud environment variables."
+    )
+
+print(f"Connecting to database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'localhost'}")
 
 mcp = FastMCP("ExpenseTracker")
 
@@ -19,7 +29,7 @@ mcp = FastMCP("ExpenseTracker")
 db_pool: asyncpg.Pool = None
 
 ## Initialize the database
-async def get_db_pool() -> asyncpg.Pool:
+def get_db_pool() -> asyncpg.Pool:
     """Get the shared asyncpg connection pool."""
     global db_pool
     if db_pool is None:
@@ -41,7 +51,8 @@ async def init_pool():
 @mcp.tool()
 async def add_expense(date, amount, category, subcategory="", note=""):
     '''Add a new expense entry to the database and return the expense id.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         expense_id = await conn.fetchval(
             """
             INSERT INTO expenses(date, amount, category, subcategory, note) 
@@ -56,7 +67,8 @@ async def add_expense(date, amount, category, subcategory="", note=""):
 @mcp.tool()
 async def list_expenses(start_date, end_date):
     '''List expense entries within an inclusive date range.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
             SELECT id, date, amount, category, subcategory, note
@@ -66,7 +78,6 @@ async def list_expenses(start_date, end_date):
             """,
             start_date, end_date
         )
-        # Convert Record objects to dicts (asyncpg equivalent of RealDictCursor)
         return [{"id": r["id"], "date": r["date"], "amount": r["amount"], 
                 "category": r["category"], "subcategory": r["subcategory"], 
                 "note": r["note"]} for r in rows]
@@ -75,7 +86,8 @@ async def list_expenses(start_date, end_date):
 @mcp.tool()
 async def summarize(start_date, end_date, category=None):
     '''Summarize expenses by category within an inclusive date range.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         query = """
             SELECT category, SUM(amount) AS total_amount
             FROM expenses
@@ -104,7 +116,8 @@ def categories():
 @mcp.tool()
 async def edit_expense(expense_id: int, date=None, amount=None, category=None, subcategory=None, note=None):
     '''Edit an existing expense entry by ID, updating provided fields.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         async with conn.transaction():
             update_fields = []
             params = []
@@ -141,7 +154,8 @@ async def edit_expense(expense_id: int, date=None, amount=None, category=None, s
 @mcp.tool()
 async def delete_expense(expense_id: int):
     '''Delete an expense entry by ID.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         async with conn.transaction():
             result = await conn.execute("DELETE FROM expenses WHERE id = $1", expense_id)
             if result == "DELETE 0":
@@ -152,11 +166,10 @@ async def delete_expense(expense_id: int):
 @mcp.tool()
 async def credit_salary(amount: float, source: str = "salary"):
     '''Add credit amount to the available total from salary or other sources.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         async with conn.transaction():
-            # Update balance
             await conn.execute("UPDATE balance SET total = total + $1 WHERE id = 1", amount)
-            # Log as income expense
             await conn.execute(
                 """
                 INSERT INTO expenses(date, amount, category, note) 
@@ -164,7 +177,6 @@ async def credit_salary(amount: float, source: str = "salary"):
                 """,
                 amount, f"income:{source}", f"Credit from {source}"
             )
-            # Get updated total
             total = await conn.fetchval("SELECT total FROM balance WHERE id=1")
             return {"status": "ok", "total_balance": float(total)}
 
@@ -172,7 +184,8 @@ async def credit_salary(amount: float, source: str = "salary"):
 @mcp.tool()
 async def set_budget(category: str, amount: float):
     '''Set budget limit for a specific category.'''
-    async with get_db_pool().acquire() as conn:
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         async with conn.transaction():
             await conn.execute("""
                 INSERT INTO budgets (category, amount) VALUES ($1, $2)
@@ -184,13 +197,12 @@ async def set_budget(category: str, amount: float):
 @mcp.tool()
 async def check_budget_status(category: str):
     '''Return spent and remaining amount for a budgeted category.'''
-    async with get_db_pool().acquire() as conn:
-        # Get budget
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         budget = await conn.fetchval("SELECT amount FROM budgets WHERE category = $1", category)
         if budget is None:
             return {"status": "error", "message": f"No budget set for category {category}"}
         
-        # Calculate total spent
         spent = await conn.fetchval("""
             SELECT COALESCE(SUM(amount), 0) AS spent FROM expenses WHERE category = $1
         """, category)
@@ -214,16 +226,14 @@ async def check_budget_status(category: str):
 @mcp.tool()
 async def financial_summary():
     """Return a summary of the financial situation including total balance, total spent, budgets, and remaining balance."""
-    async with get_db_pool().acquire() as conn:
-        # Get balance
+    pool = get_db_pool()
+    async with pool.acquire() as conn:
         total_balance = await conn.fetchval("SELECT total FROM balance WHERE id = 1")
         total_balance = float(total_balance) if total_balance is not None else 0.0
         
-        # Total spent
         total_spent = await conn.fetchval("SELECT COALESCE(SUM(amount), 0) AS total_spent FROM expenses")
         total_spent = float(total_spent) if total_spent is not None else 0.0
         
-        # Budgets
         budget_rows = await conn.fetch("SELECT category, amount FROM budgets ORDER BY category ASC")
         budgets = [
             {"category": r["category"], "budget": float(r["amount"])}
@@ -242,6 +252,8 @@ async def financial_summary():
 
 async def main():
     """Main async entrypoint."""
+    from db import init_db
+    
     # Sync DB init first (tables must exist)
     try:
         init_db()
@@ -258,10 +270,6 @@ async def main():
         if db_pool:
             await db_pool.close()
             print("✅ Database pool closed")
-
-
-### new tools addeed
-# some changes on this branch
 
 if __name__ == "__main__":
     asyncio.run(main())

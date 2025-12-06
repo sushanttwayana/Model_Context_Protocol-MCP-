@@ -1,12 +1,25 @@
+#### db.py
+
 import os
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
+import sys
 
 # Load environment variables
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
+
+DATABASE_URL = "postgresql://neondb_owner:npg_2vURTBmK9inZ@ep-wandering-mud-a1dihfd1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+# Add validation and debugging
+if not DATABASE_URL:
+    raise ValueError(
+        "❌ DATABASE_URL is not set! "
+        "Make sure it's in your .env file or fastmcp.json"
+    )
+
+print(f"🔍 DATABASE_URL loaded: {DATABASE_URL[:50]}...{DATABASE_URL[-30:]}")
 
 def get_db_connection():  # DEPRECATED - Keep only for backward compatibility
     """Sync connection - DEPRECATED for async tools"""
@@ -21,7 +34,7 @@ def get_db_connection():  # DEPRECATED - Keep only for backward compatibility
 def init_db():
     """Initialize all required tables (SYNC - called once at startup)"""
     try:
-        print("🔄 Initializing database tables (SYNC)...")
+        print("🔄 Initializing database tables (SYNC)...", file = sys.stderr)
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 # Expenses table
@@ -67,7 +80,7 @@ def init_db():
                 print("✅ All database tables initialized successfully")
                 
     except Exception as e:
-        print(f"❌ init_db failed: {e}")
+        print(f"❌ init_db failed: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         raise

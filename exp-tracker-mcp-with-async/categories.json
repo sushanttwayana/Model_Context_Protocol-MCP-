@@ -165,5 +165,10 @@
       "uncategorized",
       "rounding",
       "other"
-    ]
+  ],
+  "other": [
+    "other",
+    "others"
+  ]
+
   }

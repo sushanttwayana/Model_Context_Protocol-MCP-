@@ -5,11 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "asyncpg>=0.31.0",
     "fastapi==0.115.6",
-    "uvicorn[standard]==0.34.0",
-    "fastmcp==2.13.2",
+    "fastmcp==2.12.3",
     "psycopg2-binary==2.9.11",
     "python-dotenv==1.2.1",
+    "uvicorn[standard]==0.35.0",
 ]
 
 [dependency-groups]

@@ -7,7 +7,16 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi[all]>=0.123.4",
     "fastmcp>=2.13.2",
+    "langchain>=1.1.2",
+    "langchain-mcp-adapters>=0.1.14",
+    "langchain-openai>=1.1.0",
     "psycopg2>=2.9.11",
     "psycopg2-binary>=2.9.11",
     "python-dotenv>=1.2.1",
+    "streamlit>=1.52.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "chatbot_mcp",
 ]
