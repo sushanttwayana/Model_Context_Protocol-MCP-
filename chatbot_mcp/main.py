@@ -191,24 +191,24 @@ async def chat_endpoint(request: ChatRequest):
     result = await process_chat(request.message)
     return {"response": result}
 
-async def process_chat(prompt: str):
+async def process_chat(prompt: str): ## gets input from the user
     """Core chat processing logic (same as Streamlit)"""
     global tools_cache, named_tools_cache
     
     full_prompt = f"{get_currency_context()}\n\nUser: {prompt}"
     
-    llm = ChatGroq(model=model_name, groq_api_key=groq_api_key)
-    llm_with_tools = llm.bind_tools(tools_cache)
+    llm = ChatGroq(model=model_name, groq_api_key=groq_api_key) ## initialize the llm
+    llm_with_tools = llm.bind_tools(tools_cache) ## gets the available tools from the mcp
     
-    # Step 1: Initial LLM call
+    # Step 1: Initial LLM call and find out the necessary tool that needs to be invoked
     response = await llm_with_tools.ainvoke([HumanMessage(content=full_prompt)])
     
     if hasattr(response, 'tool_calls') and response.tool_calls:
         # Execute tool calls
         tool_results = []
         for tool_call in response.tool_calls:
-            selected_tool = named_tools_cache[tool_call['name']]
-            tool_args = tool_call['args']
+            selected_tool = named_tools_cache[tool_call['name']] ## find the right tool that needs to be called
+            tool_args = tool_call['args'] 
             tool_id = tool_call['id']
             
             tool_result = await selected_tool.ainvoke(tool_args)
@@ -298,3 +298,14 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+### -------------------- flow of the app ------------------
+# FastAPI App ← WebSocket "/ws" ← Your message
+#          ↓
+#     lifespan() → MultiServerMCPClient(SERVERS) → tools_cache
+#          ↓
+# process_chat() → ChatGroq.bind_tools(tools_cache) → robot thinks
+#          ↓
+# robot.tool_calls → named_tools[tool_name].ainvoke(args) → MCP servers work
+#          ↓
+# ToolMessage → robot final answer → WebSocket sends back
