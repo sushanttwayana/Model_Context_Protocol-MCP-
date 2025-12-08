@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, START
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain_community.tools import DuckDuckGoSearchRun
+# from langchain_community.tools import DuckDuckGoSearchRun
 from typing import TypedDict,Annotated
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph.message import add_messages
@@ -26,12 +26,13 @@ client = MultiServerMCPClient(
     {
         "arith": {
             "transport": "stdio",
-            "command": "python3",          
-            "args": ["/Users/nitish/Desktop/mcp-math-server/main.py"],
+            # "command": "C:/Users/Vanilla/anaconda3/python.exe",        
+            "command": "python",
+            "args": ["G:/sushant/Model_Context_Protocol/client_using_langgraph/mcp_main.py"],
         },
         "expense": {
             "transport": "streamable_http",  # if this fails, try "sse"
-            "url": "https://splendid-gold-dingo.fastmcp.app/mcp"
+            "url": "https://expense-tracker-mcp-proj.fastmcp.app/mcp"
         }
     }
 )
@@ -44,7 +45,7 @@ class ChatState(TypedDict):
 
 async def build_graph():
 
-    tools = await client.get_tools()
+    tools = await client.get_tools() # fetch the tools from 
 
     print(tools)
 
@@ -79,7 +80,7 @@ async def main():
     chatbot = await build_graph()
 
     # running the graph
-    result = await chatbot.ainvoke({"messages": [HumanMessage(content="Give me all my expenses for the month of Nov from 1 Nov to 30 Nov")]})
+    result = await chatbot.ainvoke({"messages": [HumanMessage(content="List me the all the expenses of the December till today.")]})
 
     print(result['messages'][-1].content)
 
